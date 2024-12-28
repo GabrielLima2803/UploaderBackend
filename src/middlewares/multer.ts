@@ -11,6 +11,8 @@ const storage = multer.diskStorage({
   },
 });
 
+// const storage = multer.memoryStorage();
+
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const fileTypes = /jpeg|jpg|png|pdf/;
   const extName = fileTypes.test(path.extname(file.originalname).toLowerCase());

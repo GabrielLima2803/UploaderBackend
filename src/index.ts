@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import '../src/middlewares/delete-expired-files';
 import express, {Application} from 'express'
 import cors from 'cors'
 import bodyParser from 'body-parser';
