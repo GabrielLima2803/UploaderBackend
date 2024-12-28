@@ -1,16 +1,14 @@
-import express, { Request, Response } from 'express';
-import path from 'path';
-import fs from 'fs';
+import { Request, Response } from 'express';
 import prisma from '../prisma/client';
-
-const uploadDir = path.resolve(__dirname, '.././uploads'); 
+import axios from 'axios';
+import { Stream } from 'stream';
 
 export const downloadImage = async (req: Request, res: Response): Promise<void> => {
   try {
     const { fileHash } = req.params;
 
     const fileRecord = await prisma.file.findUnique({
-      where: { fileHash: fileHash },
+      where: { fileHash },
     });
 
     if (!fileRecord) {
@@ -18,22 +16,19 @@ export const downloadImage = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    const filePath = path.join(uploadDir, fileRecord.fileName);
+    console.log(fileRecord);
 
-    console.log('Procurando o arquivo em:', filePath);
+    const response = await axios.get<Stream>(fileRecord.filePath, { responseType: 'stream' });
 
-    if (fs.existsSync(filePath)) {
-      res.download(filePath, (err) => {
-        if (err) {
-          console.error('Erro ao baixar o arquivo:', err);
-          res.status(500).send('Erro ao baixar o arquivo');
-        }
-      });
-    } else {
-      res.status(404).send('Arquivo não encontrado no sistema de arquivos');
-    }
+    res.setHeader('Content-Disposition', `attachment; filename="${fileRecord.fileName}"`);
+    res.setHeader('Content-Type', fileRecord.fileType || 'application/octet-stream');
+
+    response.data.pipe(res).on('error', (err: any) => {
+      console.error('Erro ao transmitir o arquivo:', err);
+      res.status(500).send('Erro ao transmitir o arquivo');
+    });
   } catch (error) {
-    console.error('Erro ao processar download:', error);
+    console.error('Erro ao processar o download:', error);
     res.status(500).send('Erro interno do servidor');
   }
 };

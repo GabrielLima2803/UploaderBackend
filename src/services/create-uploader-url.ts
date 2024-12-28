@@ -1,17 +1,16 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
-import fs from 'fs';
-import path from 'path';
-import { getMimeType } from '../utils/get-mime-type';
 import { v4 as uuidv4 } from 'uuid';
+import { v2 as cloudinary } from 'cloudinary';
+import { getMimeType } from '../utils/get-mime-type';
 
-const uploadDir = path.resolve(__dirname, '.././uploads');
 const maxFileSize = 500 * 1024 * 1024;
 
-// Certifique-se de que o diretório existe
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-}
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.CLOUD_API_KEY,
+  api_secret: process.env.CLOUD_API_SECRET,
+});
 
 export const createUploaderUrl = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -21,7 +20,6 @@ export const createUploaderUrl = async (req: Request, res: Response): Promise<vo
     }
 
     if (req.file.size > maxFileSize) {
-      fs.unlinkSync(req.file.path);
       res.status(400).json({ error: 'O tamanho do arquivo excede o limite máximo permitido' });
       return;
     }
@@ -29,30 +27,39 @@ export const createUploaderUrl = async (req: Request, res: Response): Promise<vo
     const mimeType = getMimeType(req.file.originalname);
 
     if (!['image/png', 'image/jpeg', 'application/pdf'].includes(mimeType)) {
-      fs.unlinkSync(req.file.path);
       res.status(400).json({ error: 'Tipo de arquivo não suportado' });
       return;
     }
 
     const fileHash = uuidv4();
-    const newFilePath = path.join(uploadDir, req.file.originalname);
 
-    // Move o arquivo para o diretório final com o nome original
-    fs.renameSync(req.file.path, newFilePath);
+
+    const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+      public_id: fileHash,
+      resource_type: 'auto', 
+    });
+
+    if (!uploadResult) {
+      res.status(500).json({ error: 'Falha ao fazer upload para o Cloudinary' });
+      return;
+    }
+
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); 
 
     const uploader = await prisma.file.create({
       data: {
-        fileName: req.file.originalname, // Nome original do arquivo
-        filePath: newFilePath,          // Caminho no sistema de arquivos
-        fileType: mimeType,             // Tipo MIME
-        fileHash: fileHash,             // Hash único
-        fileUrl: `${req.protocol}://${req.get('host')}/upload/${fileHash}`, // URL com hash
-        fileSize: req.file.size,        // Tamanho do arquivo
+        fileName: req.file.originalname,
+        filePath: uploadResult.secure_url, 
+        fileType: mimeType,
+        fileHash: fileHash,
+        fileUrl: `http://localhost:3000/upload/${fileHash}`,
+        fileSize: req.file.size,
+        expiresAt: expiresAt, 
       },
     });
 
     res.status(201).json({
-      message: 'Arquivo enviado com sucesso',
+      message: 'Arquivo enviado com sucesso para o Cloudinary',
       uploader,
     });
   } catch (error) {
