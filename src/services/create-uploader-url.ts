@@ -1,69 +1,87 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { v4 as uuidv4 } from 'uuid';
-import { v2 as cloudinary } from 'cloudinary';
+import cloudinary from 'cloudinary';
 import { getMimeType } from '../utils/get-mime-type';
+import fs from 'fs';
+import path from 'path';
 
 const maxFileSize = 500 * 1024 * 1024;
 
-cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.CLOUD_API_KEY,
-  api_secret: process.env.CLOUD_API_SECRET,
-});
-
 export const createUploaderUrl = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.file) {
+    if (!req.files || !Array.isArray(req.files)) {
       res.status(400).json({ error: 'Nenhum arquivo foi enviado' });
       return;
     }
 
-    if (req.file.size > maxFileSize) {
-      res.status(400).json({ error: 'O tamanho do arquivo excede o limite máximo permitido' });
-      return;
-    }
+    const uploadedFiles = await Promise.all(
+      req.files.map(async (file: Express.Multer.File) => {
 
-    const mimeType = getMimeType(req.file.originalname);
+        if (file.size > maxFileSize) {
+          throw new Error(`O arquivo ${file.originalname} excede o limite de tamanho permitido`);
+        }
 
-    if (!['image/png', 'image/jpeg', 'application/pdf'].includes(mimeType)) {
-      res.status(400).json({ error: 'Tipo de arquivo não suportado' });
-      return;
-    }
+        const mimeType = getMimeType(file.originalname);
+        if (!['image/png', 'image/jpeg', 'application/pdf'].includes(mimeType)) {
+          throw new Error(`Tipo de arquivo não suportado: ${file.originalname}`);
+        }
 
-    const fileHash = uuidv4();
+        const fileHash = uuidv4();
 
+        if (process.env.USE_LOCAL_STORAGE === 'true') {
+          const uploadPath = path.join(__dirname, '../uploads', fileHash + path.extname(file.originalname));
 
-    const uploadResult = await cloudinary.uploader.upload(req.file.path, {
-      public_id: fileHash,
-      resource_type: 'auto', 
-    });
+          const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+          return await prisma.file.create({
+            data: {
+              fileName: file.originalname,
+              filePath: uploadPath,
+              fileType: file.mimetype,
+              fileHash: fileHash,
+              fileUrl: `http://localhost:3000/uploads/${fileHash}`,
+              fileSize: file.size,
+              expiresAt: expiresAt,
+            },
+          });
+        } else {
+          const uploadResult = await new Promise((resolve, reject) => {
+            const stream = cloudinary.v2.uploader.upload_stream(
+              { public_id: fileHash, resource_type: 'auto' },
+              (error, result) => {
+                if (error) return reject(error);
+                resolve(result);
+              }
+            );
+            stream.end(file.buffer); 
+          });
 
-    if (!uploadResult) {
-      res.status(500).json({ error: 'Falha ao fazer upload para o Cloudinary' });
-      return;
-    }
+          if (!uploadResult || !(uploadResult as any).secure_url) {
+            throw new Error(`Falha ao fazer upload do arquivo: ${file.originalname}`);
+          }
 
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); 
-
-    const uploader = await prisma.file.create({
-      data: {
-        fileName: req.file.originalname,
-        filePath: uploadResult.secure_url, 
-        fileType: mimeType,
-        fileHash: fileHash,
-        fileUrl: `http://localhost:3000/upload/${fileHash}`,
-        fileSize: req.file.size,
-        expiresAt: expiresAt, 
-      },
-    });
+          const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+          return await prisma.file.create({
+            data: {
+              fileName: file.originalname,
+              filePath: (uploadResult as any).secure_url,
+              fileType: file.mimetype,
+              fileHash: fileHash,
+              fileUrl: `http://localhost:3000/uploads/${fileHash}`,
+              fileSize: file.size,
+              expiresAt: expiresAt,
+            },
+          });
+        }
+      })
+    );
 
     res.status(201).json({
-      message: 'Arquivo enviado com sucesso para o Cloudinary',
-      uploader,
+      message: 'Arquivos enviados com sucesso',
+      uploadedFiles,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    res.status(500).json({ error: (error as Error).message || 'Erro interno do servidor' });
   }
 };
