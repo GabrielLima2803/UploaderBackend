@@ -14,14 +14,14 @@ datasource db {
 }
 
 model File {
-  id           String   @id @default(uuid()) // Identificador único do arquivo
-  fileName     String   // Nome original do arquivo enviado
-  filePath     String   // Caminho físico ou no bucket
-  fileUrl      String   @unique // URL gerada para compartilhamento
-  fileHash     String   @unique // Hash único para identificação
-  fileSize     Int      // Tamanho do arquivo   
-  fileType     String   // Tipo do arquivo (ex: image/png, application/pdf)
-  uploadedAt   DateTime @default(now()) // Data de upload
-  expiresAt    DateTime? // Data de expiração
+  id           String   @id @default(uuid())
+  fileName     String  
+  filePath     String   
+  fileUrl      String   @unique
+  fileHash     String   @unique
+  fileSize     Int     
+  fileType     String   
+  uploadedAt   DateTime @default(now()) 
+  expiresAt    DateTime? 
 
 }
