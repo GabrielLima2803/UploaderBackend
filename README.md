@@ -24,5 +24,5 @@ Para rodar este projeto localmente, siga os passos abaixo:
 
 ### 1. Clone o repositório
 
-```bash
+```bash 
 git clone https://github.com/GabrielLima2803/UploaderBackend.git
