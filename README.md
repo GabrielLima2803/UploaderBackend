@@ -1,33 +1,28 @@
-# File Uploader - README
+# Projeto de Upload de Imagens para o Cloudinary
 
-## Requisitos do Projeto
+Este projeto permite o upload de imagens para o Cloudinary e retorna um link direto para o download da imagem. A API foi construída para simplificar o processo de upload e fornecer um link direto para acessar a imagem enviada.
 
-### Funcionalidades Principais
+## Tecnologias Utilizadas
 
-#### 1. Upload de Arquivo
-- [ X ] O sistema deve permitir que o usuário envie arquivos através de uma interface ou API.
-- [ X ] O backend deve armazenar o arquivo de forma segura e gerar uma URL única para acesso ao arquivo.
+- **Node.js**: Ambiente de execução para JavaScript.
+- **Express.js**: Framework para construir a API RESTful.
+- **Cloudinary**: Serviço de hospedagem de imagens na nuvem.
+- **Prisma**: ORM para interagir com o banco de dados.
+- **TypeScript**: Linguagem para garantir tipagem estática e melhorar a qualidade do código.
+- **Docker**: Contêinerização do ambiente para facilitar a execução do projeto.
 
-#### 2. Geração de URL
-- [ X ] Cada arquivo deve ter uma URL única e segura, utilizando hashes ou tokens para evitar acessos indesejados.
 
-#### 3. Download do Arquivo
-- [ ] O sistema deve validar a URL ao ser acessada, verificando a validade do token e as permissões de acesso.
-- [ X ] O backend deve retornar o arquivo solicitado, desde que a URL seja válida e não tenha expirado.
+## Funcionalidades
 
-#### 4. Monitoramento e Logs
-- [ ] O sistema deve registrar cada acesso à URL e ao arquivo, incluindo:
-  - [ ] IP de origem.
-  - [ ] Data e hora do acesso.
-- [ ] Essas informações devem ser armazenadas para análise futura e controle de auditoria.
+- **Upload de Imagens**: Permite o envio de imagens via API.
+- **Armazenamento na Nuvem (Cloudinary)**: As imagens são enviadas para o Cloudinary, onde ficam armazenadas de forma segura e otimizada.
+- **Geração de Link de Download**: Após o upload, a API retorna um link que pode ser usado para acessar ou baixar a imagem.
 
----
+## Instalação
 
-### Requisitos Extras (Opcional)
-- [ X ] **Expiração Automática de Arquivos:** Deve haver um mecanismo para excluir automaticamente arquivos que ultrapassaram o prazo de validade.
-- [ ] **Segurança:** 
-  - [ ] Restringir o tamanho máximo dos arquivos enviados.
-  - [ ] Garantir que todas as transferências sejam feitas via HTTPS.
-- [ ] **Limites e Controle:**
-  - [ ] Permitir que o usuário configure o número máximo de downloads permitidos por arquivo.
-  - [ ] Notificar o remetente quando o arquivo for baixado.
+Para rodar este projeto localmente, siga os passos abaixo:
+
+### 1. Clone o repositório
+
+```bash
+git clone https://github.com/GabrielLima2803/UploaderBackend.git
