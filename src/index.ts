@@ -2,6 +2,7 @@ import 'dotenv/config'
 import './config/cloudinary';
 import '../src/middlewares/delete-expired-files';
 import express, {Application} from 'express'
+import { swaggerUi, swaggerDocs } from './config/swagger';
 import cors from 'cors'
 import bodyParser from 'body-parser';
 import path from 'path';
@@ -12,7 +13,8 @@ const port:number = 3000;
 
 app.use(cors())
 app.use('/files', express.static(path.join(__dirname, './src/uploads')));
-app.use(router)
+app.use('/api/swagger', swaggerUi.serve, swaggerUi.setup(swaggerDocs))
+app.use('/api', router)
 app.use(bodyParser.json())
 
 app.listen(port, () => {
