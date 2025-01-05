@@ -7,7 +7,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /upload/:
+ * /uploads/:
  *   post:
  *     summary: Faz o upload de múltiplos arquivos
  *     requestBody:
@@ -28,13 +28,13 @@ const router = express.Router();
  *       400:
  *         description: Erro no envio dos arquivos.
  */
-router.post('/upload/', upload.array('files', 10), (req, res, next) => {
+router.post('/uploads/', upload.array('files', 10), (req, res, next) => {
     next();
 }, createUploaderUrl);
 
 /**
  * @swagger
- * /upload/{fileHash}:
+ * /uploads/{fileHash}:
  *   get:
  *     summary: Baixa um arquivo enviado pelo hash
  *     parameters:
@@ -50,6 +50,6 @@ router.post('/upload/', upload.array('files', 10), (req, res, next) => {
  *       404:
  *         description: Arquivo não encontrado.
  */
-router.get('/upload/:fileHash', downloadImage);
+router.get('/uploads/:fileHash', downloadImage);
 
 export default router;

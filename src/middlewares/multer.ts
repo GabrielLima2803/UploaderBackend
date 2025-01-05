@@ -4,8 +4,6 @@ import { Request } from 'express';
 import dotenv from 'dotenv';
 dotenv.config();
 
-
-console.log("Storge", process.env.USE_LOCAL_STORAGE)
 const storage = process.env.USE_LOCAL_STORAGE === 'true'
 
   ? multer.diskStorage({

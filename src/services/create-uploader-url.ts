@@ -39,7 +39,7 @@ export const createUploaderUrl = async (req: Request, res: Response): Promise<vo
               filePath: uploadPath,
               fileType: file.mimetype,
               fileHash: fileHash,
-              fileUrl: `http://localhost:3000/upload/${fileHash}`,
+              fileUrl: `http://localhost:3000/uploads/${fileHash}`,
               fileSize: file.size,
               expiresAt: expiresAt,
             },
